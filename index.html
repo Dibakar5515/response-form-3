@@ -142,10 +142,10 @@
         <option>December</option>
       </select>
 
-      <div id="subjectContainer"></div>
-
       <label for="reason">Reason:</label>
       <textarea id="reason" name="reason" rows="3" placeholder="Enter your reason..." required></textarea>
+
+      <div id="subjectContainer"></div>
 
       <button type="button" class="add-btn" onclick="addEntry()">Add Another Subject</button>
       <button type="button" class="preview-btn" onclick="showPreview()">Preview My Responses</button>
@@ -201,7 +201,9 @@
     }
 
     window.onload = function () {
-      addEntry(); addEntry(); addEntry();
+      addEntry();
+      addEntry();
+      addEntry();
     };
 
     function showPreview() {
@@ -264,7 +266,9 @@
         document.getElementById("previewSection").style.display = "none";
         document.getElementById("submitBtn").style.display = "none";
         submitBtn.classList.remove("loading");
-        addEntry(); addEntry(); addEntry();
+        addEntry();
+        addEntry();
+        addEntry();
       })
       .catch(error => {
         console.error("Submission failed:", error.message);
