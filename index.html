@@ -48,12 +48,23 @@
       position: absolute;
       top: 10px;
       right: 10px;
+      width: 24px;
+      height: 24px;
       background-color: #dc3545;
       color: white;
       border: none;
-      padding: 0.3rem 0.6rem;
-      border-radius: 5px;
+      border-radius: 50%;
       cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 22px;
+      text-align: center;
+      padding: 0;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    .remove-entry:hover {
+      background-color: #b02a37;
     }
     .add-btn, .preview-btn, .submit-btn {
       margin-top: 1rem;
@@ -142,9 +153,6 @@
         <option>December</option>
       </select>
 
-      <label for="reason">Reason:</label>
-      <textarea id="reason" name="reason" rows="3" placeholder="Enter your reason..." required></textarea>
-
       <div id="subjectContainer"></div>
 
       <button type="button" class="add-btn" onclick="addEntry()">Add Another Subject</button>
@@ -152,7 +160,7 @@
       <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
     </form>
 
-    <div class="preview-section" id="previewSection" style="display: none;">
+    <div class="preview-section" id="previewSection" style="display:none;">
       <h3>Preview</h3>
       <div id="previewContent"></div>
     </div>
@@ -168,7 +176,8 @@
       entry.className = "entry";
 
       entry.innerHTML = `
-        <button type="button" class="remove-entry" onclick="removeEntry(this)">X</button>
+        <button type="button" class="remove-entry" onclick="removeEntry(this)">×</button>
+
         <label>Subject:</label>
         <input type="text" name="subject[]" required />
 
@@ -190,17 +199,19 @@
 
         <label>Recovery Step:</label>
         <input type="text" name="recovery[]" />
+
+        <label>Reason:</label>
+        <textarea name="reason[]" rows="2" placeholder="Enter reason here..."></textarea>
       `;
 
       container.appendChild(entry);
     }
 
     function removeEntry(button) {
-      const entry = button.parentElement;
-      entry.remove();
+      button.parentElement.remove();
     }
 
-    window.onload = function () {
+    window.onload = function() {
       addEntry();
       addEntry();
       addEntry();
@@ -209,41 +220,44 @@
     function showPreview() {
       const form = document.getElementById("responseForm");
       const formData = new FormData(form);
+
       const name = formData.get("name");
       const month = formData.get("month");
-      const reason = formData.get("reason");
       const subjects = formData.getAll("subject[]");
       const types = formData.getAll("type[]");
       const credits = formData.getAll("credits[]");
-      const monthly = formData.getAll("monthly_classes[]");
-      const taken = formData.getAll("taken_classes[]");
-      const recovery = formData.getAll("recovery[]");
+      const monthlyClasses = formData.getAll("monthly_classes[]");
+      const takenClasses = formData.getAll("taken_classes[]");
+      const recoveries = formData.getAll("recovery[]");
+      const reasons = formData.getAll("reason[]");
 
       let content = `<p><strong>Name:</strong> ${name}</p>`;
       content += `<p><strong>Month:</strong> ${month}</p>`;
-      content += `<p><strong>Reason:</strong> ${reason}</p>`;
       content += `<div><strong>Subjects:</strong></div>`;
 
-      for (let i = 0; i < subjects.length; i++) {
+      for(let i=0; i<subjects.length; i++) {
         content += `
           <div class="preview-item">
-            <strong>Subject ${i + 1}:</strong><br/>
+            <strong>Subject ${i+1}:</strong><br/>
             - Name: ${subjects[i]}<br/>
             - Type: ${types[i]}<br/>
             - Credits: ${credits[i]}<br/>
-            - Total Class Monthly: ${monthly[i]}<br/>
-            - Total Class Taken: ${taken[i]}<br/>
-            - Recovery Step: ${recovery[i] || "N/A"}
+            - Total Class Monthly: ${monthlyClasses[i]}<br/>
+            - Total Class Taken: ${takenClasses[i]}<br/>
+            - Recovery Step: ${recoveries[i] || "N/A"}<br/>
+            - Reason: ${reasons[i] || "N/A"}
           </div>`;
       }
 
+      const previewSection = document.getElementById("previewSection");
+      previewSection.style.display = "block";
       document.getElementById("previewContent").innerHTML = content;
-      document.getElementById("previewSection").style.display = "block";
       document.getElementById("submitBtn").style.display = "inline-block";
     }
 
-    document.getElementById("responseForm").addEventListener("submit", function (e) {
+    document.getElementById("responseForm").addEventListener("submit", function(e) {
       e.preventDefault();
+
       const form = e.target;
       const formData = new FormData(form);
       const submitBtn = document.getElementById("submitBtn");
@@ -256,7 +270,7 @@
         body: formData
       })
       .then(response => {
-        if (!response.ok) throw new Error("HTTP error " + response.status);
+        if(!response.ok) throw new Error("HTTP error " + response.status);
         return response.text();
       })
       .then(result => {
@@ -271,7 +285,6 @@
         addEntry();
       })
       .catch(error => {
-        console.error("Submission failed:", error.message);
         alert("There was a problem submitting the form.\n" + error.message);
         submitBtn.classList.remove("loading");
       });
