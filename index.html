@@ -27,6 +27,7 @@
     label {
       display: block;
       margin-top: 1rem;
+      font-weight: bold;
     }
     input, select, button {
       width: 100%;
@@ -54,7 +55,7 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    .add-btn, .submit-btn {
+    .add-btn, .preview-btn, .submit-btn {
       margin-top: 1rem;
       padding: 0.6rem;
       font-size: 1rem;
@@ -66,9 +67,54 @@
       background-color: #28a745;
       color: white;
     }
+    .preview-btn {
+      background-color: #ffc107;
+      color: black;
+    }
     .submit-btn {
       background-color: #007BFF;
       color: white;
+      display: none;
+    }
+    .submit-btn.loading {
+      background-color: #007BFF;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .submit-btn.loading::after {
+      content: " ⏳";
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .preview-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #eef;
+      border: 1px solid #ccd;
+      border-radius: 10px;
+    }
+    .preview-section h3 {
+      margin-bottom: 1rem;
+    }
+    .preview-item {
+      margin-bottom: 1rem;
+    }
+    .success-message {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      border-radius: 5px;
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
   </style>
 </head>
@@ -82,8 +128,16 @@
       <div id="subjectContainer"></div>
 
       <button type="button" class="add-btn" onclick="addEntry()">Add Another Subject</button>
-      <button type="submit" class="submit-btn">Submit</button>
+      <button type="button" class="preview-btn" onclick="showPreview()">Preview My Responses</button>
+      <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
     </form>
+
+    <div class="preview-section" id="previewSection" style="display: none;">
+      <h3>Preview</h3>
+      <div id="previewContent"></div>
+    </div>
+
+    <div class="success-message" id="successMessage">✅ Form submitted successfully!</div>
   </div>
 
   <script>
@@ -107,6 +161,15 @@
 
         <label>Credits:</label>
         <input type="number" name="credits[]" min="0" required />
+
+        <label>Total Class Monthly:</label>
+        <input type="number" name="monthly_classes[]" min="0" required />
+
+        <label>Total Class Taken:</label>
+        <input type="number" name="taken_classes[]" min="0" required />
+
+        <label>Recovery Step:</label>
+        <input type="text" name="recovery[]" />
       `;
 
       container.appendChild(entry);
@@ -121,11 +184,46 @@
       addEntry(); addEntry(); addEntry();
     };
 
+    function showPreview() {
+      const form = document.getElementById("responseForm");
+      const formData = new FormData(form);
+      const name = formData.get("name");
+      const subjects = formData.getAll("subject[]");
+      const types = formData.getAll("type[]");
+      const credits = formData.getAll("credits[]");
+      const monthly = formData.getAll("monthly_classes[]");
+      const taken = formData.getAll("taken_classes[]");
+      const recovery = formData.getAll("recovery[]");
+
+      let content = `<p><strong>Name:</strong> ${name}</p>`;
+      content += `<div><strong>Subjects:</strong></div>`;
+
+      for (let i = 0; i < subjects.length; i++) {
+        content += `
+          <div class="preview-item">
+            <strong>Subject ${i + 1}:</strong><br/>
+            - Name: ${subjects[i]}<br/>
+            - Type: ${types[i]}<br/>
+            - Credits: ${credits[i]}<br/>
+            - Total Class Monthly: ${monthly[i]}<br/>
+            - Total Class Taken: ${taken[i]}<br/>
+            - Recovery Step: ${recovery[i] || "N/A"}
+          </div>`;
+      }
+
+      document.getElementById("previewContent").innerHTML = content;
+      document.getElementById("previewSection").style.display = "block";
+      document.getElementById("submitBtn").style.display = "inline-block";
+    }
+
     document.getElementById("responseForm").addEventListener("submit", function (e) {
       e.preventDefault();
-
       const form = e.target;
       const formData = new FormData(form);
+      const submitBtn = document.getElementById("submitBtn");
+      const successMessage = document.getElementById("successMessage");
+
+      submitBtn.classList.add("loading");
 
       fetch("https://script.google.com/a/macros/tnu.in/s/AKfycbzHhGC0Y8dBM203yzc1vgckixy7q81UmaOBDSQmRw-JOkqnY7Y5kFnpLWdal16uNfrF/exec", {
         method: "POST",
@@ -136,14 +234,18 @@
         return response.text();
       })
       .then(result => {
-        alert("Form submitted successfully!");
+        successMessage.style.display = "block";
         form.reset();
         document.getElementById("subjectContainer").innerHTML = "";
+        document.getElementById("previewSection").style.display = "none";
+        document.getElementById("submitBtn").style.display = "none";
+        submitBtn.classList.remove("loading");
         addEntry(); addEntry(); addEntry();
       })
       .catch(error => {
         console.error("Submission failed:", error.message);
         alert("There was a problem submitting the form.\n" + error.message);
+        submitBtn.classList.remove("loading");
       });
     });
   </script>
