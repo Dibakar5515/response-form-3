@@ -1,38 +1,277 @@
-<!-- shortened for clarity, only JavaScript part is shown here -->
-<script>
-  // ... previous functions like addEntry, removeEntry, showPreview ...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Subject Response Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .form-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 700px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .entry {
+      border: 1px solid #ddd;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 8px;
+      background-color: #fdfdfd;
+      position: relative;
+    }
+    .remove-entry {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .add-btn, .preview-btn, .submit-btn {
+      margin-top: 1rem;
+      padding: 0.6rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .add-btn {
+      background-color: #28a745;
+      color: white;
+    }
+    .preview-btn {
+      background-color: #ffc107;
+      color: black;
+    }
+    .submit-btn {
+      background-color: #007BFF;
+      color: white;
+      display: none;
+    }
+    .submit-btn.loading {
+      background-color: #007BFF;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .submit-btn.loading::after {
+      content: " ⏳";
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .preview-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #eef;
+      border: 1px solid #ccd;
+      border-radius: 10px;
+    }
+    .preview-section h3 {
+      margin-bottom: 1rem;
+    }
+    .preview-item {
+      margin-bottom: 1rem;
+    }
+    .success-message {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      border-radius: 5px;
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Response Form</h2>
+    <form id="responseForm">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required />
 
-  document.getElementById("responseForm").addEventListener("submit", function (e) {
-    e.preventDefault();
+      <label for="month">Month:</label>
+      <select id="month" name="month" required>
+        <option value="">Select Month</option>
+        <option>January</option>
+        <option>February</option>
+        <option>March</option>
+        <option>April</option>
+        <option>May</option>
+        <option>June</option>
+        <option>July</option>
+        <option>August</option>
+        <option>September</option>
+        <option>October</option>
+        <option>November</option>
+        <option>December</option>
+      </select>
 
-    const form = e.target;
-    const formData = new FormData(form);
-    const submitBtn = document.getElementById("submitBtn");
-    const successMessage = document.getElementById("successMessage");
+      <div id="subjectContainer"></div>
 
-    submitBtn.classList.add("loading");
+      <label for="reason">Reason:</label>
+      <textarea id="reason" name="reason" rows="3" placeholder="Enter your reason..." required></textarea>
 
-    fetch("https://script.google.com/a/macros/tnu.in/s/AKfycbzgge_iXzvjRHRUiSAWruiT0XR0HxVhcC11-p_LB3XZu4vPjycZTbKlwooP3A2HdR2C/exec", {
-      method: "POST",
-      body: formData
-    })
-    .then(response => {
-      if (!response.ok) throw new Error("HTTP error " + response.status);
-      return response.text();
-    })
-    .then(result => {
-      successMessage.style.display = "block";
-      form.reset();
-      document.getElementById("subjectContainer").innerHTML = "";
-      document.getElementById("previewSection").style.display = "none";
-      document.getElementById("submitBtn").style.display = "none";
-      submitBtn.classList.remove("loading");
+      <button type="button" class="add-btn" onclick="addEntry()">Add Another Subject</button>
+      <button type="button" class="preview-btn" onclick="showPreview()">Preview My Responses</button>
+      <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
+    </form>
+
+    <div class="preview-section" id="previewSection" style="display: none;">
+      <h3>Preview</h3>
+      <div id="previewContent"></div>
+    </div>
+
+    <div class="success-message" id="successMessage">✅ Form submitted successfully!</div>
+  </div>
+
+  <script>
+    function addEntry() {
+      const container = document.getElementById("subjectContainer");
+
+      const entry = document.createElement("div");
+      entry.className = "entry";
+
+      entry.innerHTML = `
+        <button type="button" class="remove-entry" onclick="removeEntry(this)">X</button>
+        <label>Subject:</label>
+        <input type="text" name="subject[]" required />
+
+        <label>Theory or Practical:</label>
+        <select name="type[]" required>
+          <option value="">Select one</option>
+          <option value="Theory">Theory</option>
+          <option value="Practical">Practical</option>
+        </select>
+
+        <label>Credits:</label>
+        <input type="number" name="credits[]" min="0" required />
+
+        <label>Total Class Monthly:</label>
+        <input type="number" name="monthly_classes[]" min="0" required />
+
+        <label>Total Class Taken:</label>
+        <input type="number" name="taken_classes[]" min="0" required />
+
+        <label>Recovery Step:</label>
+        <input type="text" name="recovery[]" />
+      `;
+
+      container.appendChild(entry);
+    }
+
+    function removeEntry(button) {
+      const entry = button.parentElement;
+      entry.remove();
+    }
+
+    window.onload = function () {
       addEntry(); addEntry(); addEntry();
-    })
-    .catch(error => {
-      console.error("Submission failed:", error.message);
-      alert("There was a problem submitting the form.\n" + error.message);
-      submitBtn.classList.remove("loading");
+    };
+
+    function showPreview() {
+      const form = document.getElementById("responseForm");
+      const formData = new FormData(form);
+      const name = formData.get("name");
+      const month = formData.get("month");
+      const reason = formData.get("reason");
+      const subjects = formData.getAll("subject[]");
+      const types = formData.getAll("type[]");
+      const credits = formData.getAll("credits[]");
+      const monthly = formData.getAll("monthly_classes[]");
+      const taken = formData.getAll("taken_classes[]");
+      const recovery = formData.getAll("recovery[]");
+
+      let content = `<p><strong>Name:</strong> ${name}</p>`;
+      content += `<p><strong>Month:</strong> ${month}</p>`;
+      content += `<p><strong>Reason:</strong> ${reason}</p>`;
+      content += `<div><strong>Subjects:</strong></div>`;
+
+      for (let i = 0; i < subjects.length; i++) {
+        content += `
+          <div class="preview-item">
+            <strong>Subject ${i + 1}:</strong><br/>
+            - Name: ${subjects[i]}<br/>
+            - Type: ${types[i]}<br/>
+            - Credits: ${credits[i]}<br/>
+            - Total Class Monthly: ${monthly[i]}<br/>
+            - Total Class Taken: ${taken[i]}<br/>
+            - Recovery Step: ${recovery[i] || "N/A"}
+          </div>`;
+      }
+
+      document.getElementById("previewContent").innerHTML = content;
+      document.getElementById("previewSection").style.display = "block";
+      document.getElementById("submitBtn").style.display = "inline-block";
+    }
+
+    document.getElementById("responseForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      const submitBtn = document.getElementById("submitBtn");
+      const successMessage = document.getElementById("successMessage");
+
+      submitBtn.classList.add("loading");
+
+      fetch("https://script.google.com/a/macros/tnu.in/s/AKfycbzgge_iXzvjRHRUiSAWruiT0XR0HxVhcC11-p_LB3XZu4vPjycZTbKlwooP3A2HdR2C/exec", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("HTTP error " + response.status);
+        return response.text();
+      })
+      .then(result => {
+        successMessage.style.display = "block";
+        form.reset();
+        document.getElementById("subjectContainer").innerHTML = "";
+        document.getElementById("previewSection").style.display = "none";
+        document.getElementById("submitBtn").style.display = "none";
+        submitBtn.classList.remove("loading");
+        addEntry(); addEntry(); addEntry();
+      })
+      .catch(error => {
+        console.error("Submission failed:", error.message);
+        alert("There was a problem submitting the form.\n" + error.message);
+        submitBtn.classList.remove("loading");
+      });
     });
-  });
-</script>
+  </script>
+</body>
+</html>
