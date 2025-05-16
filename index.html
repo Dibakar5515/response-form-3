@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Multi-Subject Response Form</title>
+  <title>Attendance and Recovery Form</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -97,11 +97,6 @@
     }
     .submit-btn.loading::after {
       content: " ⏳";
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
     }
     .preview-section {
       margin-top: 2rem;
@@ -134,7 +129,7 @@
 </head>
 <body>
   <div class="form-container">
-    <h2>Response Form</h2>
+    <h2>Attendance and Recovery Form</h2>
     <form id="responseForm">
       <label for="name">Name:</label>
       <input type="text" id="name" name="name" required />
@@ -252,9 +247,8 @@
           </div>`;
       }
 
-      const previewSection = document.getElementById("previewSection");
-      previewSection.style.display = "block";
       document.getElementById("previewContent").innerHTML = content;
+      document.getElementById("previewSection").style.display = "block";
       document.getElementById("submitBtn").style.display = "inline-block";
     }
 
@@ -268,12 +262,12 @@
 
       submitBtn.classList.add("loading");
 
-      fetch("https://script.google.com/macros/s/AKfycbyEndm3lSMsnmxeInPrkzrPOr1eMyMqIyHbipJrbiO1hZV8rGQ09AEk9FBd8HJE6Oig/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbw09w3moFwuIInj1LQng72bC9I3exNhQZxewrGbZDSdyWQJby0Mp9HVSJwk4_0Itxwg/exec", {
         method: "POST",
         body: formData
       })
       .then(response => {
-        if(!response.ok) throw new Error("HTTP error " + response.status);
+        if (!response.ok) throw new Error("HTTP error " + response.status);
         return response.text();
       })
       .then(result => {
@@ -283,9 +277,7 @@
         document.getElementById("previewSection").style.display = "none";
         document.getElementById("submitBtn").style.display = "none";
         submitBtn.classList.remove("loading");
-        addEntry();
-        addEntry();
-        addEntry();
+        addEntry(); addEntry(); addEntry();
       })
       .catch(error => {
         alert("There was a problem submitting the form.\n" + error.message);
